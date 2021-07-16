@@ -1,6 +1,6 @@
 from physics import Body, Vector
 import pyglet
-import datetime
+from constants import CONSTANTS
 
 
 def color_generator():
@@ -26,15 +26,17 @@ class BodyWrapper:
 
     def draw(self, origin):
         if self.trace:
-            pyglet.graphics.draw(
-                int(len(self.trace) / 2),
-                pyglet.gl.GL_POINTS,
-                ('v2f', self.trace),
-            )
+            for coords in self.trace:
+                pyglet.shapes.Circle(
+                    x=coords.x,
+                    y=coords.y,
+                    radius=0.5,
+                    color=self.color
+                ).draw()
         pyglet.shapes.Circle(
             x=self.body.position.x + origin.x,
             y=self.body.position.y + origin.y,
-            radius=10,
+            radius=1.75,
             color=self.color
         ).draw()
 
@@ -50,10 +52,12 @@ class BodyCluster:
             next_position = self.bodies[i].body.step(
                 others=[self.bodies[j].body for j in range(len(self.bodies)) if j != i]
             )
-            self.bodies[i].trace.extend([
-                next_position.x + origin.x,
-                next_position.y + origin.y
-            ])
+            self.bodies[i].trace.append(
+                Vector(
+                    x=next_position.x + origin.x,
+                    y=next_position.y + origin.y
+                )
+            )
 
     def draw(self, origin):
         for body in self.bodies:
@@ -82,5 +86,5 @@ class Game:
         )
 
     def run(self):
-        pyglet.clock.schedule_interval(self.update, 0.1)
+        pyglet.clock.schedule_interval(self.update, CONSTANTS["period"])
         pyglet.app.run()
