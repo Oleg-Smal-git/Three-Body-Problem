@@ -63,6 +63,12 @@ class BodyCluster:
         for body in self.bodies:
             body.draw(origin)
 
+    def center(self):
+        return sum(
+            [body.body.position * body.body.mass for body in self.bodies],
+            start=Vector()
+        )
+
 
 class Game:
     def __init__(self, cluster=BodyCluster()):
@@ -84,6 +90,11 @@ class Game:
                 y=self.window.height / 2
             )
         )
+        pyglet.text.Label(
+            text=f"Center of mass: ("
+                 f"{round(self.cluster.center().x  + self.window.width / 2, 3)},"
+                 f" {round(self.cluster.center().y + self.window.height / 2, 3)})"
+        ).draw()
 
     def run(self):
         pyglet.clock.schedule_interval(self.update, CONSTANTS["period"])

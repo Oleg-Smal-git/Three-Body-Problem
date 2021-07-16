@@ -8,15 +8,15 @@ if __name__ == '__main__':
             [graphics.BodyWrapper(body) for body in [
                 physics.Body(
                     position=physics.Vector(100, 100),
-                    mass=1
+                    mass=100
                 ),
                 physics.Body(
                     position=physics.Vector(-100, 100),
-                    mass=1
+                    mass=100
                 ),
                 physics.Body(
                     position=physics.Vector(100, -100),
-                    mass=1
+                    mass=100
                 )
             ]]
         )

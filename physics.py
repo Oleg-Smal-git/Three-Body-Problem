@@ -53,11 +53,11 @@ class Body:
         self.mass = mass
 
     def calculate_attraction(self, other):
-        length = (CONSTANTS["gravity"] * other.mass) / ((other.position - self.position).length() ** 2)
+        multiplier = (CONSTANTS["gravity"] * other.mass) / ((other.position - self.position).length() ** 3)
         return Vector(
-            math.cos(length),
-            math.sin(length)
-        )
+            other.position.x - self.position.x,
+            other.position.y - self.position.y
+        ) * multiplier
 
     def calculate_total_acceleration(self, others):
         return sum(
@@ -70,7 +70,6 @@ class Body:
         if self.velocity is None:
             self.velocity = Vector()
         self.velocity += self.acceleration * CONSTANTS["period"]
-
         self.position += self.velocity * CONSTANTS["period"] + (self.acceleration * CONSTANTS["period"] ** 2) / 2
         return self.position
 
