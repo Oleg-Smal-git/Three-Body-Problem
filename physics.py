@@ -52,4 +52,5 @@ class Body:
         self.acceleration = self.calculate_total_acceleration(others)
         self.velocity += self.acceleration * CONSTANTS["period"]
         self.position += self.velocity * CONSTANTS["period"] + (self.acceleration * CONSTANTS["period"] ** 2) / 2
+        return self.position
 
