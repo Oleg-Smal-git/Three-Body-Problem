@@ -36,7 +36,7 @@ class BodyWrapper:
         pyglet.shapes.Circle(
             x=self.body.position.x + origin.x,
             y=self.body.position.y + origin.y,
-            radius=1.75,
+            radius=2.5,
             color=self.color
         ).draw()
 
