@@ -1,101 +1,122 @@
-from physics import Body, Vector
+import datetime
+
+import physics
 import pyglet
-from constants import CONSTANTS
+import config
 
 
-def color_generator():
+def wrapper_generator():
     colors = [
-        (255, 0, 0),
-        (0, 255, 0),
-        (0, 0, 255)
+        (255, 0, 0),  # red
+        (0, 255, 0),  # green
+        (0, 0, 255),  # blue
+        (255, 255, 0),  # yellow
+        (0, 255, 255),  # cyan
+        (255, 0, 255),  # purple
     ]
+    i = 0
     for c in colors:
-        yield c
+        i += 1
+        yield {
+            "color": c,
+            "name": f"Body_{i}"
+        }
     while True:
-        yield 0, 0, 0
+        i += 1
+        yield {
+            "color": (255, 255, 255),  # white
+            "name": f"Body_{i}"
+        }
 
 
-colors_list = color_generator()
+body_wrappers = wrapper_generator()
 
 
 class BodyWrapper:
-    def __init__(self, body=Body()):
-        self.body = body
-        self.color = next(colors_list)
-        self.trace = []
+    def __init__(self, body=physics.Body(), color=None, name=None):
+        if (
+            isinstance(body, physics.Body) and
+            (isinstance(color, tuple) or color is None) and
+            (isinstance(name, str) or name is None)
+        ):
+            self.body = body
+            self.color = color
+            self.name = name
+            self.wake = []
+            if (self.color is None) or (self.name is None):
+                wrapper = next(body_wrappers)
+                self.color = self.color if self.color else wrapper["color"]
+                self.name = self.name if self.name else wrapper["name"]
 
-    def draw(self, origin):
-        if self.trace:
-            for coords in self.trace:
+        else:
+            raise TypeError(
+                f"Incompatible argument types: " +
+                f"body: {type(body)}, color: {type(color)}, " +
+                f"name: {type(name)}"
+            )
+
+    def draw(self, origin=physics.Vector()):
+        if isinstance(origin, physics.Vector):
+            for trace in self.wake:
+                pass
                 pyglet.shapes.Circle(
-                    x=coords.x,
-                    y=coords.y,
+                    x=trace.x + origin.x,
+                    y=trace.y + origin.y,
                     radius=0.5,
                     color=self.color
                 ).draw()
-        pyglet.shapes.Circle(
-            x=self.body.position.x + origin.x,
-            y=self.body.position.y + origin.y,
-            radius=2.5,
-            color=self.color
-        ).draw()
+            pyglet.shapes.Circle(
+                x=self.body.position.x + origin.x,
+                y=self.body.position.y + origin.y,
+                radius=2.5,
+                color=self.color
+            ).draw()
+        else:
+            raise TypeError(f"Incompatible argument type: {type(origin)}")
 
 
-class BodyCluster:
+class Simulation:
     def __init__(self, wrappers=None):
         if wrappers is None:
-            wrappers = list()
-        self.bodies = wrappers
+            wrappers = []
+        if isinstance(wrappers, list):
+            self.wrappers = wrappers
+            self.window = pyglet.window.Window(fullscreen=True)
+        else:
+            raise TypeError(f"Incompatible argument type: {type(wrappers)}")
 
-    def step(self, origin):
-        for i in range(len(self.bodies)):
-            next_position = self.bodies[i].body.step(
-                others=[self.bodies[j].body for j in range(len(self.bodies)) if j != i]
-            )
-            self.bodies[i].trace.append(
-                Vector(
-                    x=next_position.x + origin.x,
-                    y=next_position.y + origin.y
-                )
-            )
-
-    def draw(self, origin):
-        for body in self.bodies:
-            body.draw(origin)
-
-    def center(self):
-        return sum(
-            [body.body.position * body.body.mass for body in self.bodies],
-            start=Vector()
-        )
-
-
-class Game:
-    def __init__(self, cluster=BodyCluster()):
-        self.cluster = cluster
-        self.window = pyglet.window.Window(
-            fullscreen=True
-        )
+    def draw(self, origin=physics.Vector()):
+        if isinstance(origin, physics.Vector):
+            for wrapper in self.wrappers:
+                wrapper.draw(origin=origin)
+        else:
+            raise TypeError(f"Incompatible argument type: {type(origin)}")
 
     def update(self, dt):
         self.window.clear()
-        self.cluster.step(
-            origin=Vector(
-                x=self.window.width / 2,
-                y=self.window.height / 2
-            ))
-        self.cluster.draw(
-            origin=Vector(
+        for _ in range(config.CONSTANTS["calculation_scale"]):
+            for i in range(len(self.wrappers)):
+                self.wrappers[i].body.step(
+                    delta_time=1 / (config.CONSTANTS["framerate"] * config.CONSTANTS["calculation_scale"]),
+                    others=[self.wrappers[j].body for j in range(len(self.wrappers)) if j != i]
+                )
+        for i in range(len(self.wrappers)):
+            self.wrappers[i].wake.append(
+                physics.Vector(
+                    x=self.wrappers[i].body.position.x,
+                    y=self.wrappers[i].body.position.y
+                )
+            )
+        self.draw(
+            origin=physics.Vector(
                 x=self.window.width / 2,
                 y=self.window.height / 2
             )
         )
-        pyglet.text.Label(
-            text=f"Center of mass: ("
-                 f"{round(self.cluster.center().x  + self.window.width / 2, 3)},"
-                 f" {round(self.cluster.center().y + self.window.height / 2, 3)})"
-        ).draw()
 
     def run(self):
-        pyglet.clock.schedule_interval(self.update, CONSTANTS["period"])
+        pyglet.clock.schedule_interval(
+            func=self.update,
+            interval=1 / config.CONSTANTS["framerate"]
+        )
         pyglet.app.run()
