@@ -45,8 +45,19 @@ class Vector:
         return (self.x ** 2 + self.y ** 2) ** 0.5
 
 
+def name_generator():
+    i = -1
+    while True:
+        i += 1
+        yield f"body{i}"
+
+
+name_gen = name_generator()
+
+
 class Body:
     def __init__(self, position=Vector(), velocity=Vector(), acceleration=Vector(), mass=0.0):
+        self.name = next(name_gen)
         self.position = position
         self.velocity = velocity
         self.acceleration = acceleration
@@ -54,6 +65,8 @@ class Body:
 
     def calculate_attraction(self, other):
         multiplier = (CONSTANTS["gravity"] * other.mass) / ((other.position - self.position).length() ** 3)
+        if (other.position - self.position).length() < 10:
+            print(f"{other.name} -> {self.name} = {(other.position - self.position).length()}")
         return Vector(
             other.position.x - self.position.x,
             other.position.y - self.position.y

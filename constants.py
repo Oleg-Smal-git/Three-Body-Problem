@@ -1,4 +1,4 @@
 CONSTANTS = {
-    "gravity": 10e2,
+    "gravity": 10e3,
     "period": 1 / 10
 }
